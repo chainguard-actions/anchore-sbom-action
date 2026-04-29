@@ -1,6 +1,12 @@
 # anchore/sbom-action
 
-Hardened GitHub Action by [Chainguard](https://www.chainguard.dev).
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/anchore/sbom-action](https://github.com/anchore/sbom-action).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v0.24.0 | [`v0.24.0`](https://github.com/chainguard-actions/sbom-action/tree/v0.24.0) | — |
 
 ## Privacy
 
