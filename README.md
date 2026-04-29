@@ -1,5 +1,7 @@
 # anchore/sbom-action
 
+GitHub Action for creating software bill of materials using Syft.
+
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/anchore/sbom-action](https://github.com/anchore/sbom-action).
 
 ## Versions
