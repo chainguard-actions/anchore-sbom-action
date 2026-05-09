@@ -2,5 +2,6 @@
   "owner": "anchore",
   "name": "sbom-action",
   "visibility": "internal",
-  "description": "GitHub Action for creating software bill of materials using Syft."
+  "description": "GitHub Action for creating software bill of materials using Syft.",
+  "block_publish": false
 }
