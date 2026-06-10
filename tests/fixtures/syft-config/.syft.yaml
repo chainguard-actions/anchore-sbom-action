@@ -1,0 +1,14 @@
+# Syft configuration for testing
+output:
+  - "spdx-json"
+
+catalogers:
+  - "alpmdb-cataloger"
+  - "apkdb-cataloger"
+  - "dpkgdb-cataloger"
+  - "rpmdb-cataloger"
+  - "python-package-cataloger"
+  - "javascript-package-cataloger"
+  - "java-cataloger"
+  - "go-module-binary-cataloger"
+  - "ruby-gemspec-cataloger"

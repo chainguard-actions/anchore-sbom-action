@@ -1,0 +1,32 @@
+name: Test config file usage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          config: "actions/hardened/anchore--sbom-action/v0.24.0/tests/fixtures/syft-config/.syft.yaml"
+          output-file: "/tmp/sbom-config-output.spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+      - name: Assert SBOM output file exists
+        run: |
+          if [ ! -f "/tmp/sbom-config-output.spdx.json" ]; then
+            echo "FAIL: expected SBOM output file at /tmp/sbom-config-output.spdx.json"
+            exit 1
+          fi
+          echo "PASS: SBOM output file exists"
+      - name: Assert SBOM output is valid JSON
+        run: |
+          if ! python3 -m json.tool /tmp/sbom-config-output.spdx.json > /dev/null 2>&1; then
+            echo "FAIL: SBOM output is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: SBOM output is valid JSON"
