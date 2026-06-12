@@ -1,0 +1,3 @@
+# Minimal syft configuration for testing
+log:
+  level: warn

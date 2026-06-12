@@ -1,4 +1,4 @@
-name: Test image scan
+name: Test basic path scan
 on:
   workflow_dispatch:
 jobs:
@@ -9,26 +9,26 @@ jobs:
       - id: action
         uses: .
         with:
-          image: "alpine:3.18"
-          registry-username: ""
-          registry-password: ""
+          path: "."
           format: "spdx-json"
-          output-file: "/tmp/sbom-image-output.spdx.json"
+          artifact-name: "sbom-test-output.spdx.json"
+          output-file: "/tmp/sbom-output.spdx.json"
+          syft-version: "v1.19.0"
           upload-artifact: "false"
           upload-release-assets: "false"
           dependency-snapshot: "false"
       - name: Assert SBOM output file exists
         run: |
-          echo "Checking SBOM output file from image scan..."
-          if [ ! -f "/tmp/sbom-image-output.spdx.json" ]; then
-            echo "FAIL: expected /tmp/sbom-image-output.spdx.json to exist"
+          echo "Checking SBOM output file..."
+          if [ ! -f "/tmp/sbom-output.spdx.json" ]; then
+            echo "FAIL: expected /tmp/sbom-output.spdx.json to exist"
             exit 1
           fi
           echo "PASS: SBOM output file exists"
       - name: Assert SBOM output is valid JSON
         run: |
           echo "Validating SBOM JSON..."
-          if ! python3 -m json.tool /tmp/sbom-image-output.spdx.json > /dev/null 2>&1; then
+          if ! python3 -m json.tool /tmp/sbom-output.spdx.json > /dev/null 2>&1; then
             echo "FAIL: SBOM output is not valid JSON"
             exit 1
           fi
