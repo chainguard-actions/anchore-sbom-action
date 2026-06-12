@@ -8,7 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
-| v0.24.0 | [`v0.24.0`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.24.0) | — |
+| v0.24.0 | [`v0.24.0`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.24.0) | [`e22c389`](https://github.com/anchore/sbom-action/commit/e22c389904149dbc22b58101806040fa8d37a610) |
 
 ## Privacy
 
