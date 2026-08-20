@@ -1,0 +1,59 @@
+name: Test output file and format options
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "cyclonedx-json"
+          output-file: "/tmp/test-sbom.cdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert output file was created
+        run: |
+          echo "Checking for output file at /tmp/test-sbom.cdx.json"
+          if [ ! -f "/tmp/test-sbom.cdx.json" ]; then
+            echo "FAIL: expected output file /tmp/test-sbom.cdx.json not found"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/test-sbom.cdx.json)
+          echo "File size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: output file appears empty"
+            exit 1
+          fi
+          echo "PASS: output file exists with content"
+
+      - name: Assert output file is valid JSON
+        run: |
+          if ! python3 -c "import json, sys; json.load(open('/tmp/test-sbom.cdx.json'))" 2>/dev/null; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: output file is valid JSON"
+
+      - name: Assert output file contains CycloneDX content
+        run: |
+          BOM_FORMAT=$(python3 -c "import json; d=json.load(open('/tmp/test-sbom.cdx.json')); print(d.get('bomFormat', ''))" 2>/dev/null || echo "")
+          echo "bomFormat: $BOM_FORMAT"
+          if [ "$BOM_FORMAT" = "CycloneDX" ]; then
+            echo "PASS: CycloneDX bomFormat confirmed"
+          else
+            # Check for components or metadata as fallback
+            HAS_CDX=$(python3 -c "import json; d=json.load(open('/tmp/test-sbom.cdx.json')); print('yes' if 'components' in d or 'metadata' in d or 'bomFormat' in d else 'no')" 2>/dev/null || echo "no")
+            echo "Has CycloneDX fields: $HAS_CDX"
+            if [ "$HAS_CDX" = "yes" ]; then
+              echo "PASS: CycloneDX content detected"
+            else
+              echo "FAIL: CycloneDX-specific fields not found in output"
+              exit 1
+            fi
+          fi

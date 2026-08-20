@@ -1,0 +1,48 @@
+name: Test artifact name and upload
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          artifact-name: "test-sbom-artifact"
+          output-file: "/tmp/artifact-name-sbom.spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert SBOM output file was created
+        run: |
+          echo "Checking for SBOM output at /tmp/artifact-name-sbom.spdx.json"
+          if [ ! -f "/tmp/artifact-name-sbom.spdx.json" ]; then
+            echo "FAIL: SBOM output file not found"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/artifact-name-sbom.spdx.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file appears empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file exists with content"
+
+      - name: Assert SBOM is valid SPDX JSON
+        run: |
+          if ! python3 -c "import json, sys; json.load(open('/tmp/artifact-name-sbom.spdx.json'))" 2>/dev/null; then
+            echo "FAIL: SBOM output is not valid JSON"
+            exit 1
+          fi
+          SPDX_VER=$(python3 -c "import json; d=json.load(open('/tmp/artifact-name-sbom.spdx.json')); print(d.get('spdxVersion', ''))" 2>/dev/null || echo "")
+          echo "spdxVersion: $SPDX_VER"
+          if [ -z "$SPDX_VER" ]; then
+            echo "FAIL: spdxVersion not found in SBOM"
+            exit 1
+          fi
+          echo "PASS: SBOM is valid SPDX JSON with version: $SPDX_VER"

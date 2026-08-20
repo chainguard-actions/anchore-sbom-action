@@ -1,0 +1,51 @@
+name: Test basic path scan
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          output-file: "/tmp/basic-sbom.spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert SBOM output file exists
+        run: |
+          echo "Checking for SBOM output at /tmp/basic-sbom.spdx.json"
+          if [ ! -f "/tmp/basic-sbom.spdx.json" ]; then
+            echo "FAIL: SBOM output file not found at /tmp/basic-sbom.spdx.json"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/basic-sbom.spdx.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file appears empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file exists with content"
+
+      - name: Assert SBOM content is valid JSON
+        run: |
+          if ! python3 -c "import json, sys; json.load(open('/tmp/basic-sbom.spdx.json'))" 2>/dev/null; then
+            echo "FAIL: SBOM file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: SBOM file is valid JSON"
+
+      - name: Assert SBOM contains SPDX content
+        run: |
+          SPDX_VER=$(python3 -c "import json; d=json.load(open('/tmp/basic-sbom.spdx.json')); print(d.get('spdxVersion', ''))" 2>/dev/null || echo "")
+          echo "spdxVersion: $SPDX_VER"
+          if [ -z "$SPDX_VER" ]; then
+            echo "FAIL: spdxVersion not found in SBOM"
+            exit 1
+          fi
+          echo "PASS: SBOM contains spdxVersion: $SPDX_VER"

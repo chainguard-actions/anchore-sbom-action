@@ -1,0 +1,50 @@
+name: Test SPDX tag-value format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx"
+          output-file: "/tmp/test-sbom.spdx"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert SPDX tag-value file was created
+        run: |
+          echo "Checking for SPDX output at /tmp/test-sbom.spdx"
+          if [ ! -f "/tmp/test-sbom.spdx" ]; then
+            echo "FAIL: SPDX output file not found"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/test-sbom.spdx)
+          echo "SPDX file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SPDX file appears empty"
+            exit 1
+          fi
+          echo "PASS: SPDX file exists with content"
+
+      - name: Assert SPDX file has expected header
+        run: |
+          FIRST_LINE=$(head -1 /tmp/test-sbom.spdx)
+          echo "First line: $FIRST_LINE"
+          # SPDX tag-value format starts with SPDXVersion
+          if echo "$FIRST_LINE" | grep -q "SPDXVersion"; then
+            echo "PASS: SPDX tag-value format confirmed"
+          else
+            echo "WARN: SPDXVersion not found in first line, checking file content"
+            if grep -q "SPDX" /tmp/test-sbom.spdx; then
+              echo "PASS: SPDX content found in file"
+            else
+              echo "FAIL: no SPDX content found in output file"
+              exit 1
+            fi
+          fi

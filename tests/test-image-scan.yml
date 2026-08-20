@@ -1,4 +1,4 @@
-name: Test image scan
+name: Test container image scan
 on:
   workflow_dispatch:
 jobs:
@@ -6,30 +6,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - id: action
         uses: .
         with:
           image: "alpine:3.18"
-          registry-username: ""
-          registry-password: ""
           format: "spdx-json"
-          output-file: "/tmp/sbom-image-output.spdx.json"
+          output-file: "/tmp/image-sbom.json"
           upload-artifact: "false"
           upload-release-assets: "false"
-          dependency-snapshot: "false"
-      - name: Assert SBOM output file exists
+          github-token: ${{ github.token }}
+
+      - name: Assert SBOM was generated from image scan
         run: |
-          echo "Checking SBOM output file from image scan..."
-          if [ ! -f "/tmp/sbom-image-output.spdx.json" ]; then
-            echo "FAIL: expected /tmp/sbom-image-output.spdx.json to exist"
+          echo "Checking for SBOM output at /tmp/image-sbom.json"
+          if [ ! -f "/tmp/image-sbom.json" ]; then
+            echo "FAIL: SBOM output file not found"
             exit 1
           fi
-          echo "PASS: SBOM output file exists"
-      - name: Assert SBOM output is valid JSON
+          SIZE=$(wc -c < /tmp/image-sbom.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file appears empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file generated from image scan"
+
+      - name: Assert SBOM is valid SPDX JSON with packages
         run: |
-          echo "Validating SBOM JSON..."
-          if ! python3 -m json.tool /tmp/sbom-image-output.spdx.json > /dev/null 2>&1; then
+          if ! python3 -c "import json, sys; json.load(open('/tmp/image-sbom.json'))" 2>/dev/null; then
             echo "FAIL: SBOM output is not valid JSON"
             exit 1
           fi
-          echo "PASS: SBOM output is valid JSON"
+          PKG_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/image-sbom.json')); print(len(d.get('packages', [])))" 2>/dev/null || echo "0")
+          echo "Package count: $PKG_COUNT"
+          if [ "$PKG_COUNT" -eq 0 ]; then
+            echo "FAIL: no packages found in SBOM for alpine:3.18"
+            exit 1
+          fi
+          echo "PASS: SBOM contains $PKG_COUNT packages"

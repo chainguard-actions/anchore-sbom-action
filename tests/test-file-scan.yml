@@ -1,4 +1,4 @@
-name: Test file scan
+name: Test file scan input
 on:
   workflow_dispatch:
 jobs:
@@ -6,20 +6,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a test archive file to scan
+        run: |
+          # Create a simple tar.gz with a package.json for syft to scan
+          mkdir -p /tmp/test-pkg
+          cat > /tmp/test-pkg/package.json << 'EOF'
+          {
+            "name": "test-package",
+            "version": "1.0.0",
+            "dependencies": {
+              "lodash": "4.17.21"
+            }
+          }
+          EOF
+          tar -czf /tmp/test-archive.tar.gz -C /tmp/test-pkg .
+          echo "Created test archive at /tmp/test-archive.tar.gz"
+
       - id: action
         uses: .
         with:
-          file: "actions/hardened/anchore--sbom-action/v0.24.0/action.yml"
+          file: "/tmp/test-archive.tar.gz"
           format: "spdx-json"
-          output-file: "/tmp/sbom-file-output.spdx.json"
+          output-file: "/tmp/file-scan-sbom.json"
           upload-artifact: "false"
           upload-release-assets: "false"
-          dependency-snapshot: "false"
-      - name: Assert SBOM output file exists
+          github-token: ${{ github.token }}
+
+      - name: Assert SBOM was generated from file scan
         run: |
-          echo "Checking SBOM output file from file scan..."
-          if [ ! -f "/tmp/sbom-file-output.spdx.json" ]; then
-            echo "FAIL: expected /tmp/sbom-file-output.spdx.json to exist"
+          echo "Checking for SBOM output at /tmp/file-scan-sbom.json"
+          if [ ! -f "/tmp/file-scan-sbom.json" ]; then
+            echo "FAIL: SBOM output file not found"
             exit 1
           fi
-          echo "PASS: SBOM output file exists"
+          SIZE=$(wc -c < /tmp/file-scan-sbom.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file appears empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file generated from file scan"
+
+      - name: Assert SBOM is valid JSON
+        run: |
+          if ! python3 -c "import json, sys; json.load(open('/tmp/file-scan-sbom.json'))" 2>/dev/null; then
+            echo "FAIL: SBOM output is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: SBOM output is valid JSON"

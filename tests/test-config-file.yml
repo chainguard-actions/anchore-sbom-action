@@ -1,0 +1,28 @@
+name: Test config input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          config: "${{ github.workspace }}/hardened/tests/fixtures/syft-config/.syft.yaml"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+
+      - name: Assert SBOM output is non-empty
+        env:
+          SBOM: ${{ steps.action.outputs.sbom }}
+        run: |
+          echo "sbom output: $SBOM"
+          if [ -z "$SBOM" ]; then
+            echo "FAIL: expected sbom output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: sbom output is present"

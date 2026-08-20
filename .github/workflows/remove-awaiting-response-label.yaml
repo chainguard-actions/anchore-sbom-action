@@ -1,0 +1,13 @@
+name: "Manage Awaiting Response Label"
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  run:
+    uses: "anchore/workflows/.github/workflows/remove-awaiting-response-label.yaml@a71346be63db56f324237b6a35fd35ffcec6d737" # main
+    secrets:
+      token: ${{ secrets.OSS_PROJECT_GH_TOKEN }}
