@@ -1,0 +1,51 @@
+name: Test syft-version and config inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create syft config file
+        run: |
+          mkdir -p /tmp/syft-config
+          cat > /tmp/syft-config/.syft.yaml << 'EOF'
+          output:
+            - "spdx-json"
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx-json
+          syft-version: "v1.4.1"
+          config: /tmp/syft-config/.syft.yaml
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          output-file: /tmp/sbom-syft-version.spdx.json
+
+      - name: Assert SBOM file was created
+        run: |
+          echo "Checking SBOM output file..."
+          if [ ! -f /tmp/sbom-syft-version.spdx.json ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-syft-version.spdx.json"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/sbom-syft-version.spdx.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 100 ]; then
+            echo "FAIL: SBOM file is too small (likely empty or invalid)"
+            exit 1
+          fi
+          echo "PASS: SBOM file created with $SIZE bytes"
+
+      - name: Assert SBOM contains SPDX content
+        run: |
+          if ! grep -q "SPDXID" /tmp/sbom-syft-version.spdx.json; then
+            echo "FAIL: SBOM does not contain expected SPDX content"
+            cat /tmp/sbom-syft-version.spdx.json | head -20
+            exit 1
+          fi
+          echo "PASS: SBOM contains SPDX content"

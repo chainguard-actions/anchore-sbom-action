@@ -1,0 +1,43 @@
+name: Test image scan
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          image: alpine:3.18
+          registry-username: ""
+          registry-password: ""
+          format: spdx-json
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          output-file: /tmp/sbom-image.spdx.json
+
+      - name: Assert SBOM file was created
+        run: |
+          echo "Checking SBOM output file..."
+          if [ ! -f /tmp/sbom-image.spdx.json ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-image.spdx.json"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/sbom-image.spdx.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 100 ]; then
+            echo "FAIL: SBOM file is too small (likely empty or invalid)"
+            exit 1
+          fi
+          echo "PASS: SBOM file created with $SIZE bytes"
+
+      - name: Assert SBOM contains SPDX content
+        run: |
+          if ! grep -q "SPDXID" /tmp/sbom-image.spdx.json; then
+            echo "FAIL: SBOM does not contain expected SPDX content"
+            cat /tmp/sbom-image.spdx.json | head -20
+            exit 1
+          fi
+          echo "PASS: SBOM contains SPDX content"

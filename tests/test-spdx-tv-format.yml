@@ -1,0 +1,33 @@
+name: Test SPDX tag-value format output
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          output-file: "/tmp/sbom-output.spdx"
+
+      - name: Assert SPDX tag-value SBOM output file exists and contains SPDX content
+        run: |
+          echo "Checking SPDX tag-value SBOM output file..."
+          if [ ! -f "/tmp/sbom-output.spdx" ]; then
+            echo "FAIL: SPDX tag-value SBOM output file not found at /tmp/sbom-output.spdx"
+            exit 1
+          fi
+          echo "File exists. Checking it contains SPDX tag-value content..."
+          if ! grep -q "SPDXVersion:" /tmp/sbom-output.spdx; then
+            echo "FAIL: SBOM does not contain SPDXVersion tag"
+            cat /tmp/sbom-output.spdx | head -20
+            exit 1
+          fi
+          echo "PASS: SPDX tag-value SBOM file is valid"
