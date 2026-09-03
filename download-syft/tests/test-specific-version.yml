@@ -1,4 +1,4 @@
-name: Test basic usage - download syft default version
+name: Test download syft with specific version
 on:
   workflow_dispatch:
 jobs:
@@ -10,6 +10,7 @@ jobs:
         uses: .
         with:
           run: download-syft
+          syft-version: "v1.19.0"
       - name: Assert cmd output is set
         env:
           CMD: ${{ steps.action.outputs.cmd }}
@@ -30,14 +31,15 @@ jobs:
             exit 1
           fi
           echo "PASS: syft binary is executable"
-      - name: Assert syft runs and reports version
+      - name: Assert syft reports expected version
         env:
           CMD: ${{ steps.action.outputs.cmd }}
         run: |
           echo "Running: $CMD version"
-          "$CMD" version
-          if [ $? -ne 0 ]; then
-            echo "FAIL: syft version command failed"
+          VERSION_OUTPUT=$("$CMD" version 2>&1)
+          echo "Version output: $VERSION_OUTPUT"
+          if ! echo "$VERSION_OUTPUT" | grep -q "1.19.0"; then
+            echo "FAIL: expected version 1.19.0 in output but got: $VERSION_OUTPUT"
             exit 1
           fi
-          echo "PASS: syft version command succeeded"
+          echo "PASS: syft reports expected version 1.19.0"
