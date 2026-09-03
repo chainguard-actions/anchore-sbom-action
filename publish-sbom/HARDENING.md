@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-# Hardening Report: anchore--sbom-action/v0.24.2
+# Hardening Report: anchore--sbom-action--publish-sbom/v0.24.2
 
 > This file was generated automatically by the hardening agent.
 
@@ -10,5 +10,5 @@
 
 **Harden Agent Version:** `2`
 
-Action **anchore--sbom-action/v0.24.2** was hardened automatically. 0 finding(s) were identified and resolved across 0 iteration(s).
+Action **anchore--sbom-action--publish-sbom/v0.24.2** was hardened automatically. 0 finding(s) were identified and resolved across 0 iteration(s).
 

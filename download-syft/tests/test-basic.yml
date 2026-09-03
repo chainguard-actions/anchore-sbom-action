@@ -1,0 +1,39 @@
+name: Test basic download-syft
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          run: download-syft
+      - name: Assert cmd output is set
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "cmd: $CMD"
+          if [ -z "$CMD" ]; then
+            echo "FAIL: expected cmd output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: cmd output is '$CMD'"
+      - name: Assert syft binary is executable
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "Checking syft binary at: $CMD"
+          if [ ! -x "$CMD" ]; then
+            echo "FAIL: syft binary is not executable at '$CMD'"
+            exit 1
+          fi
+          echo "PASS: syft binary is executable"
+      - name: Assert syft runs and reports version
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "Running: $CMD version"
+          "$CMD" version
+          echo "PASS: syft ran successfully"

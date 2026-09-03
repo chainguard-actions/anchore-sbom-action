@@ -1,0 +1,45 @@
+name: Test download-syft with specific version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          run: download-syft
+          syft-version: "v1.19.0"
+      - name: Assert cmd output is set
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "cmd: $CMD"
+          if [ -z "$CMD" ]; then
+            echo "FAIL: expected cmd output to be non-empty"
+            exit 1
+          fi
+          echo "PASS: cmd output is '$CMD'"
+      - name: Assert syft binary is executable
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "Checking syft binary at: $CMD"
+          if [ ! -x "$CMD" ]; then
+            echo "FAIL: syft binary is not executable at '$CMD'"
+            exit 1
+          fi
+          echo "PASS: syft binary is executable"
+      - name: Assert syft version matches requested version
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "Running: $CMD version"
+          VERSION_OUTPUT="$("$CMD" version)"
+          echo "Version output: $VERSION_OUTPUT"
+          if ! echo "$VERSION_OUTPUT" | grep -q "1.19.0"; then
+            echo "FAIL: expected version output to contain '1.19.0'"
+            exit 1
+          fi
+          echo "PASS: syft version matches requested version"
