@@ -1,0 +1,44 @@
+name: Test file scan
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a test file to scan
+        run: |
+          # Create a simple archive file that syft can scan
+          mkdir -p /tmp/scan-target
+          echo '{"name":"test-pkg","version":"1.0.0"}' > /tmp/scan-target/package.json
+          tar -czf /tmp/test-archive.tar.gz -C /tmp/scan-target .
+          echo "Created test archive at /tmp/test-archive.tar.gz"
+
+      - id: action
+        uses: .
+        with:
+          file: "/tmp/test-archive.tar.gz"
+          format: "spdx-json"
+          output-file: "/tmp/sbom-file-scan.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert output file was created
+        run: |
+          echo "Checking /tmp/sbom-file-scan.json"
+          if [ ! -f "/tmp/sbom-file-scan.json" ]; then
+            echo "FAIL: expected SBOM output file at /tmp/sbom-file-scan.json"
+            exit 1
+          fi
+          echo "PASS: SBOM file created from file scan"
+
+      - name: Assert output file contains valid JSON
+        run: |
+          if ! python3 -c "import json; json.load(open('/tmp/sbom-file-scan.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: output file contains valid JSON"

@@ -1,0 +1,39 @@
+name: Test artifact-name input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          artifact-name: "my-custom-sbom"
+          output-file: "/tmp/sbom-named.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert action completed and output file exists
+        run: |
+          echo "Checking /tmp/sbom-named.json"
+          if [ ! -f "/tmp/sbom-named.json" ]; then
+            echo "FAIL: expected SBOM output file at /tmp/sbom-named.json"
+            exit 1
+          fi
+          echo "PASS: SBOM file created with custom artifact-name"
+
+      - name: Assert output file is non-empty
+        run: |
+          SIZE=$(wc -c < /tmp/sbom-named.json)
+          echo "File size: $SIZE bytes"
+          if [ "$SIZE" -eq 0 ]; then
+            echo "FAIL: SBOM output file is empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file is non-empty ($SIZE bytes)"

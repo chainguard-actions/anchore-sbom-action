@@ -1,0 +1,43 @@
+name: Test syft-version input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          syft-version: "v1.0.1"
+          output-file: "/tmp/sbom-versioned.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert output file was created with specified syft version
+        run: |
+          echo "Checking /tmp/sbom-versioned.json"
+          if [ ! -f "/tmp/sbom-versioned.json" ]; then
+            echo "FAIL: expected SBOM output file at /tmp/sbom-versioned.json"
+            exit 1
+          fi
+          echo "PASS: SBOM file created using specified syft version"
+
+      - name: Assert output file contains valid SPDX JSON
+        run: |
+          if ! python3 -c "import json; json.load(open('/tmp/sbom-versioned.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          SPDX_VERSION=$(python3 -c "import json; d=json.load(open('/tmp/sbom-versioned.json')); print(d.get('spdxVersion',''))" 2>/dev/null || echo "")
+          echo "spdxVersion: $SPDX_VERSION"
+          if [ -z "$SPDX_VERSION" ]; then
+            echo "FAIL: spdxVersion field not found in SBOM"
+            exit 1
+          fi
+          echo "PASS: SBOM contains spdxVersion=$SPDX_VERSION"

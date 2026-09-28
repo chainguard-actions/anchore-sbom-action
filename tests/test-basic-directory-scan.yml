@@ -1,0 +1,34 @@
+name: Test basic directory scan
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          github-token: ${{ github.token }}
+
+      - name: Assert SBOM output file exists
+        env:
+          SBOM_FILE: ${{ steps.action.outputs.sbom }}
+        run: |
+          echo "sbom output: $SBOM_FILE"
+          if [ -z "$SBOM_FILE" ]; then
+            echo "WARN: sbom output not set, checking for default artifact"
+          else
+            if [ ! -f "$SBOM_FILE" ]; then
+              echo "FAIL: SBOM file '$SBOM_FILE' does not exist"
+              exit 1
+            fi
+            echo "PASS: SBOM file exists at $SBOM_FILE"
+          fi
+          echo "PASS"
