@@ -1,4 +1,4 @@
-name: Test basic usage - download syft default version
+name: Test basic Syft download
 on:
   workflow_dispatch:
 jobs:
@@ -20,24 +20,13 @@ jobs:
             exit 1
           fi
           echo "PASS: cmd output is set to '$CMD'"
-      - name: Assert syft binary is executable
-        env:
-          CMD: ${{ steps.action.outputs.cmd }}
-        run: |
-          echo "Checking syft binary at: $CMD"
-          if [ ! -x "$CMD" ]; then
-            echo "FAIL: syft binary is not executable at '$CMD'"
-            exit 1
-          fi
-          echo "PASS: syft binary is executable"
-      - name: Assert syft runs and reports version
+      - name: Assert syft is executable
         env:
           CMD: ${{ steps.action.outputs.cmd }}
         run: |
           echo "Running: $CMD version"
-          "$CMD" version
-          if [ $? -ne 0 ]; then
-            echo "FAIL: syft version command failed"
+          if ! "$CMD" version; then
+            echo "FAIL: syft command failed to run"
             exit 1
           fi
-          echo "PASS: syft version command succeeded"
+          echo "PASS: syft ran successfully"

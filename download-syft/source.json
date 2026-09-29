@@ -2,6 +2,7 @@
   "owner": "anchore",
   "repo": "sbom-action",
   "version": "v0.24.2",
+  "path": "download-syft",
   "commit_sha": "3ad7283483fc7af8ff2b4ea19663c2d5ca935e26",
   "url": "https://github.com/anchore/sbom-action",
   "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",

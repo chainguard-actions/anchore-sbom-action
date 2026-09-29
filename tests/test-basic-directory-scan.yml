@@ -1,0 +1,37 @@
+name: Test basic directory scan (spdx-json)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx-json
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          output-file: "/tmp/sbom-basic.spdx.json"
+
+      - name: Assert SBOM output file exists and is valid JSON
+        run: |
+          echo "Checking SBOM output file..."
+          if [ ! -f "/tmp/sbom-basic.spdx.json" ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-basic.spdx.json"
+            exit 1
+          fi
+          echo "File exists. Checking it is valid JSON..."
+          if ! python3 -c "import json,sys; json.load(open('/tmp/sbom-basic.spdx.json'))" 2>&1; then
+            echo "FAIL: SBOM output is not valid JSON"
+            exit 1
+          fi
+          echo "Checking SBOM contains SPDX fields..."
+          if ! python3 -c "import json,sys; d=json.load(open('/tmp/sbom-basic.spdx.json')); assert 'spdxVersion' in d or 'SPDXID' in d or 'packages' in d, 'missing SPDX fields'" 2>&1; then
+            echo "FAIL: SBOM does not appear to be a valid SPDX document"
+            exit 1
+          fi
+          echo "PASS: SBOM file is valid SPDX JSON"

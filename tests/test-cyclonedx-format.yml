@@ -1,0 +1,37 @@
+name: Test CycloneDX format output
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: cyclonedx-json
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+          output-file: "/tmp/sbom-cyclonedx.json"
+
+      - name: Assert CycloneDX SBOM output file exists and is valid
+        run: |
+          echo "Checking CycloneDX SBOM output file..."
+          if [ ! -f "/tmp/sbom-cyclonedx.json" ]; then
+            echo "FAIL: CycloneDX SBOM output file not found at /tmp/sbom-cyclonedx.json"
+            exit 1
+          fi
+          echo "File exists. Checking it is valid JSON..."
+          if ! python3 -c "import json,sys; json.load(open('/tmp/sbom-cyclonedx.json'))" 2>&1; then
+            echo "FAIL: CycloneDX SBOM output is not valid JSON"
+            exit 1
+          fi
+          echo "Checking SBOM contains CycloneDX fields..."
+          if ! python3 -c "import json,sys; d=json.load(open('/tmp/sbom-cyclonedx.json')); assert 'bomFormat' in d or 'components' in d or 'specVersion' in d, 'missing CycloneDX fields'" 2>&1; then
+            echo "FAIL: SBOM does not appear to be a valid CycloneDX document"
+            exit 1
+          fi
+          echo "PASS: CycloneDX SBOM file is valid"
