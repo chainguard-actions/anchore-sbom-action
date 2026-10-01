@@ -1,0 +1,39 @@
+name: Test file scan
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a test file to scan
+        run: |
+          # Create a simple archive file that syft can scan
+          mkdir -p /tmp/test-scan-dir
+          echo '{"name":"test-pkg","version":"1.0.0"}' > /tmp/test-scan-dir/package.json
+          tar -czf /tmp/test-archive.tar.gz -C /tmp/test-scan-dir .
+
+      - id: action
+        uses: .
+        with:
+          file: "/tmp/test-archive.tar.gz"
+          format: spdx-json
+          output-file: "/tmp/sbom-file-scan.spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists and is valid JSON
+        run: |
+          echo "Checking output file from file scan..."
+          if [ ! -f "/tmp/sbom-file-scan.spdx.json" ]; then
+            echo "FAIL: output file /tmp/sbom-file-scan.spdx.json does not exist"
+            exit 1
+          fi
+          echo "File exists. Checking it is valid JSON..."
+          if ! python3 -c "import json, sys; json.load(open('/tmp/sbom-file-scan.spdx.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: file scan produced valid SPDX JSON output"

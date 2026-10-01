@@ -1,0 +1,46 @@
+name: Test CycloneDX format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: cyclonedx-json
+          output-file: "/tmp/sbom-cyclonedx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert CycloneDX output file exists and is valid JSON
+        run: |
+          echo "Checking CycloneDX output file..."
+          if [ ! -f "/tmp/sbom-cyclonedx.json" ]; then
+            echo "FAIL: output file /tmp/sbom-cyclonedx.json does not exist"
+            exit 1
+          fi
+          echo "File exists. Checking it is valid JSON..."
+          if ! python3 -c "import json, sys; json.load(open('/tmp/sbom-cyclonedx.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: CycloneDX output file exists and is valid JSON"
+
+      - name: Assert CycloneDX structure
+        run: |
+          BOMFORMAT=$(python3 -c "import json; d=json.load(open('/tmp/sbom-cyclonedx.json')); print(d.get('bomFormat',''))" 2>/dev/null || echo "")
+          echo "bomFormat: $BOMFORMAT"
+          if [ -z "$BOMFORMAT" ]; then
+            echo "FAIL: bomFormat not found in CycloneDX SBOM output"
+            exit 1
+          fi
+          if [ "$BOMFORMAT" != "CycloneDX" ]; then
+            echo "FAIL: expected bomFormat=CycloneDX, got $BOMFORMAT"
+            exit 1
+          fi
+          echo "PASS: CycloneDX SBOM has bomFormat=$BOMFORMAT"

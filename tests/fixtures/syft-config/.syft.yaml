@@ -1,0 +1,10 @@
+output:
+  - spdx-json
+
+file:
+  metadata:
+    digests:
+      - sha256
+
+catalogers:
+  default: true

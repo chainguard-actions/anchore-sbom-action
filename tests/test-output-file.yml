@@ -1,0 +1,42 @@
+name: Test output file
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx-json
+          output-file: "/tmp/sbom-output.spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists and is valid JSON
+        run: |
+          echo "Checking output file..."
+          if [ ! -f "/tmp/sbom-output.spdx.json" ]; then
+            echo "FAIL: output file /tmp/sbom-output.spdx.json does not exist"
+            exit 1
+          fi
+          echo "File exists. Checking it is valid JSON..."
+          if ! python3 -c "import json, sys; json.load(open('/tmp/sbom-output.spdx.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: output file exists and is valid JSON"
+
+      - name: Assert SPDX structure
+        run: |
+          SPDXVERSION=$(python3 -c "import json; d=json.load(open('/tmp/sbom-output.spdx.json')); print(d.get('spdxVersion',''))" 2>/dev/null || echo "")
+          echo "spdxVersion: $SPDXVERSION"
+          if [ -z "$SPDXVERSION" ]; then
+            echo "FAIL: spdxVersion not found in SBOM output"
+            exit 1
+          fi
+          echo "PASS: SPDX SBOM has spdxVersion=$SPDXVERSION"
