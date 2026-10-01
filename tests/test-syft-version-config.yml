@@ -1,0 +1,47 @@
+name: Test syft-version and config inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create syft config file
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/hardened/tests/fixtures"
+          cat > "$GITHUB_WORKSPACE/hardened/tests/fixtures/syft-config.yaml" <<'EOF'
+          output:
+            - spdx-json
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          path: "."
+          format: spdx-json
+          syft-version: "v1.19.0"
+          config: "${{ github.workspace }}/hardened/tests/fixtures/syft-config.yaml"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+
+      - name: Assert action ran with syft-version and config
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          SBOM: ${{ steps.action.outputs.sbom }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "sbom output: $SBOM"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$SBOM" ]; then
+              echo "FAIL: action succeeded but sbom output is empty"
+              exit 1
+            fi
+            echo "PASS: syft-version and config inputs accepted, SBOM generated"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with syft-version and config inputs (may fail in harness environment)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

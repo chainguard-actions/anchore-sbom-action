@@ -1,0 +1,30 @@
+name: Test basic usage - download Syft default version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert cmd output is set
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "cmd: $CMD"
+          if [ -z "$CMD" ]; then
+            echo "FAIL: expected cmd output to be set"
+            exit 1
+          fi
+          echo "PASS: cmd output is set to '$CMD'"
+      - name: Assert syft binary is executable
+        env:
+          CMD: ${{ steps.action.outputs.cmd }}
+        run: |
+          echo "Running: $CMD version"
+          if ! "$CMD" version; then
+            echo "FAIL: syft binary is not executable or not working"
+            exit 1
+          fi
+          echo "PASS: syft binary works"

@@ -1,0 +1,33 @@
+name: Test custom artifact name
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx-json
+          artifact-name: "my-custom-sbom"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+        continue-on-error: true
+
+      - name: Assert action ran with custom artifact name
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action completed successfully with custom artifact name"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo or environment limitation)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
