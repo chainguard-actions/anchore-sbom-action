@@ -1,0 +1,45 @@
+name: Test output file with cyclonedx-json format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: sbom
+        uses: .
+        with:
+          path: "."
+          format: "cyclonedx-json"
+          output-file: "/tmp/sbom-output.cdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists
+        run: |
+          echo "Checking for output file at /tmp/sbom-output.cdx.json"
+          if [ ! -f "/tmp/sbom-output.cdx.json" ]; then
+            echo "FAIL: output file not found at /tmp/sbom-output.cdx.json"
+            exit 1
+          fi
+          echo "PASS: output file exists"
+
+      - name: Assert output file is valid JSON
+        run: |
+          echo "Validating JSON content of output file"
+          if ! python3 -c "import json, sys; json.load(open('/tmp/sbom-output.cdx.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: output file is valid JSON"
+
+      - name: Assert output file contains CycloneDX content
+        run: |
+          echo "Checking for CycloneDX bomFormat field"
+          if ! grep -q "bomFormat" /tmp/sbom-output.cdx.json; then
+            echo "FAIL: output file does not contain 'bomFormat' (expected CycloneDX)"
+            exit 1
+          fi
+          echo "PASS: output file contains CycloneDX content"

@@ -1,0 +1,58 @@
+name: Test scanning a specific file
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a test file to scan
+        run: |
+          mkdir -p /tmp/scan-target
+          # Create a simple package.json to give syft something to scan
+          cat > /tmp/scan-target/package.json << 'EOF'
+          {
+            "name": "test-package",
+            "version": "1.0.0",
+            "dependencies": {
+              "lodash": "4.17.21"
+            }
+          }
+          EOF
+          echo "Created test package.json"
+
+      - id: sbom
+        uses: .
+        with:
+          path: "/tmp/scan-target"
+          format: "spdx-json"
+          output-file: "/tmp/sbom-file-scan.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists
+        run: |
+          echo "Checking for output file at /tmp/sbom-file-scan.json"
+          if [ ! -f "/tmp/sbom-file-scan.json" ]; then
+            echo "FAIL: output file not found"
+            exit 1
+          fi
+          echo "PASS: output file exists"
+
+      - name: Assert output file is valid JSON
+        run: |
+          if ! python3 -c "import json; json.load(open('/tmp/sbom-file-scan.json'))" 2>&1; then
+            echo "FAIL: output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: output file is valid JSON"
+
+      - name: Assert SBOM contains SPDX structure
+        run: |
+          if ! grep -q "SPDXID" /tmp/sbom-file-scan.json; then
+            echo "FAIL: output does not contain SPDX structure"
+            exit 1
+          fi
+          echo "PASS: SBOM contains SPDX structure"

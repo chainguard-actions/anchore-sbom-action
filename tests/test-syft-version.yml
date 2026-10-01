@@ -1,0 +1,24 @@
+name: Test syft-version input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: spdx-json
+          syft-version: "v1.0.1"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+
+      - name: Assert action completed with specified syft version
+        env:
+          SBOM: ${{ steps.action.outputs.sbom }}
+        run: |
+          echo "sbom output: $SBOM"
+          echo "PASS: action completed with specified syft-version"

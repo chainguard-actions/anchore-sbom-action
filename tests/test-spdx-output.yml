@@ -1,0 +1,55 @@
+name: Test SPDX JSON output format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: sbom
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          output-file: "/tmp/sbom-spdx.json"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists
+        run: |
+          echo "Checking for SPDX output file at /tmp/sbom-spdx.json"
+          if [ ! -f "/tmp/sbom-spdx.json" ]; then
+            echo "FAIL: SPDX output file not found"
+            exit 1
+          fi
+          echo "PASS: SPDX output file exists"
+
+      - name: Assert output file is valid JSON
+        run: |
+          if ! python3 -c "import json, sys; json.load(open('/tmp/sbom-spdx.json'))" 2>&1; then
+            echo "FAIL: SPDX output file is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: SPDX output file is valid JSON"
+
+      - name: Assert output file contains SPDX content
+        run: |
+          echo "Checking for SPDX identifier in output"
+          if ! grep -q "SPDXID" /tmp/sbom-spdx.json; then
+            echo "FAIL: output file does not contain 'SPDXID' (expected SPDX format)"
+            exit 1
+          fi
+          echo "PASS: output file contains SPDX content"
+
+      - name: Assert SBOM references the scanned path
+        run: |
+          echo "Checking SBOM has package entries"
+          PACKAGES=$(python3 -c "import json; d=json.load(open('/tmp/sbom-spdx.json')); print(len(d.get('packages', [])))")
+          echo "Package count: $PACKAGES"
+          if [ "$PACKAGES" -lt 1 ]; then
+            echo "FAIL: SBOM contains no packages"
+            exit 1
+          fi
+          echo "PASS: SBOM contains $PACKAGES package(s)"
