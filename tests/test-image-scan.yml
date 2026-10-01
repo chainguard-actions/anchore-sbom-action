@@ -1,4 +1,4 @@
-name: Test image scan with registry credentials
+name: Test image scan
 on:
   workflow_dispatch:
 jobs:
@@ -16,19 +16,19 @@ jobs:
           format: spdx-json
           upload-artifact: "false"
           upload-release-assets: "false"
-          dependency-snapshot: "false"
-        continue-on-error: true
+          output-file: /tmp/sbom-image.json
 
-      - name: Assert action ran (image scan succeeded or failed gracefully)
-        env:
-          OUTCOME: ${{ steps.action.outcome }}
+      - name: Assert SBOM output file exists and is non-empty
         run: |
-          echo "outcome: $OUTCOME"
-          if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: image scan succeeded"
-          elif [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed gracefully (acceptable in harness environment)"
-          else
-            echo "FAIL: unexpected outcome '$OUTCOME'"
+          echo "Checking SBOM output file..."
+          if [ ! -f /tmp/sbom-image.json ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-image.json"
             exit 1
           fi
+          SIZE=$(wc -c < /tmp/sbom-image.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM output file is too small (likely empty)"
+            exit 1
+          fi
+          echo "PASS: SBOM image scan output file exists and is non-empty"

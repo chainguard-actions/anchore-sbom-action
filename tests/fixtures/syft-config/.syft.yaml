@@ -1,7 +1,0 @@
-output:
-  - spdx-json
-
-file:
-  metadata:
-    digests:
-      - sha256
