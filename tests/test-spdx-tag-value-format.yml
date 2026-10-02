@@ -1,0 +1,40 @@
+name: Test SPDX tag-value format output
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx"
+          output-file: "/tmp/sbom-output.spdx"
+          artifact-name: "sbom-test-spdx-tv"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists
+        run: |
+          echo "Checking SPDX tag-value SBOM output file..."
+          if [ ! -f "/tmp/sbom-output.spdx" ]; then
+            echo "FAIL: SPDX tag-value SBOM output file not found at /tmp/sbom-output.spdx"
+            exit 1
+          fi
+          echo "PASS: SPDX tag-value SBOM output file exists"
+
+      - name: Assert SBOM contains SPDX tag-value header
+        run: |
+          echo "Checking SPDX tag-value header..."
+          if ! grep -q "SPDXVersion:" /tmp/sbom-output.spdx; then
+            echo "FAIL: SPDXVersion tag not found in SPDX tag-value output"
+            cat /tmp/sbom-output.spdx | head -20
+            exit 1
+          fi
+          SPDX_LINE=$(grep "SPDXVersion:" /tmp/sbom-output.spdx | head -1)
+          echo "Found: $SPDX_LINE"
+          echo "PASS: SPDX tag-value output contains SPDXVersion header"

@@ -1,0 +1,37 @@
+name: Test config input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create syft config file
+        run: |
+          cat > /tmp/syft-config.yaml << 'EOF'
+          output:
+            - spdx-json
+          EOF
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          config: "/tmp/syft-config.yaml"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          output-file: "/tmp/sbom-config.json"
+      - name: Assert SBOM file was created
+        run: |
+          echo "Checking SBOM output file..."
+          if [ ! -f "/tmp/sbom-config.json" ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-config.json"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/sbom-config.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file is too small, likely empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file created successfully using config input"

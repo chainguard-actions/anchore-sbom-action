@@ -1,0 +1,52 @@
+name: Test CycloneDX format output
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "cyclonedx-json"
+          output-file: "/tmp/sbom-output.cyclonedx.json"
+          artifact-name: "sbom-test-cyclonedx"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          dependency-snapshot: "false"
+
+      - name: Assert output file exists
+        run: |
+          echo "Checking CycloneDX SBOM output file..."
+          if [ ! -f "/tmp/sbom-output.cyclonedx.json" ]; then
+            echo "FAIL: CycloneDX SBOM output file not found at /tmp/sbom-output.cyclonedx.json"
+            exit 1
+          fi
+          echo "PASS: CycloneDX SBOM output file exists"
+
+      - name: Assert output file is valid JSON
+        run: |
+          echo "Validating CycloneDX JSON..."
+          if ! python3 -c "import json,sys; json.load(open('/tmp/sbom-output.cyclonedx.json'))" 2>&1; then
+            echo "FAIL: CycloneDX SBOM output is not valid JSON"
+            exit 1
+          fi
+          echo "PASS: CycloneDX SBOM output is valid JSON"
+
+      - name: Assert SBOM contains CycloneDX fields
+        run: |
+          echo "Checking CycloneDX fields in SBOM..."
+          BOM_FORMAT=$(python3 -c "import json; d=json.load(open('/tmp/sbom-output.cyclonedx.json')); print(d.get('bomFormat',''))" 2>/dev/null || echo "")
+          echo "bomFormat: $BOM_FORMAT"
+          if [ -z "$BOM_FORMAT" ]; then
+            echo "FAIL: bomFormat field not found in CycloneDX SBOM"
+            exit 1
+          fi
+          if [ "$BOM_FORMAT" != "CycloneDX" ]; then
+            echo "FAIL: expected bomFormat 'CycloneDX', got '$BOM_FORMAT'"
+            exit 1
+          fi
+          echo "PASS: SBOM contains bomFormat: $BOM_FORMAT"

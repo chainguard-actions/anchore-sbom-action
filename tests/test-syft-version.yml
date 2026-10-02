@@ -1,0 +1,31 @@
+name: Test syft-version input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          path: "."
+          format: "spdx-json"
+          syft-version: "v1.19.0"
+          upload-artifact: "false"
+          upload-release-assets: "false"
+          output-file: "/tmp/sbom-syft-version.json"
+      - name: Assert SBOM file was created
+        run: |
+          echo "Checking SBOM output file..."
+          if [ ! -f "/tmp/sbom-syft-version.json" ]; then
+            echo "FAIL: SBOM output file not found at /tmp/sbom-syft-version.json"
+            exit 1
+          fi
+          SIZE=$(wc -c < /tmp/sbom-syft-version.json)
+          echo "SBOM file size: $SIZE bytes"
+          if [ "$SIZE" -lt 10 ]; then
+            echo "FAIL: SBOM file is too small, likely empty"
+            exit 1
+          fi
+          echo "PASS: SBOM file created successfully with specified syft-version"
