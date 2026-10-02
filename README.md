@@ -14,6 +14,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v0.23.1 | [`v0.23.1`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.23.1) | [`57aae52`](https://github.com/anchore/sbom-action/commit/57aae528053a48a3f6235f2d9461b05fbcb7366d) |
 | v0.24.0 | [`v0.24.0`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.24.0) | [`e22c389`](https://github.com/anchore/sbom-action/commit/e22c389904149dbc22b58101806040fa8d37a610) |
 | v0.24.2 | [`v0.24.2`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.24.2) | [`3ad7283`](https://github.com/anchore/sbom-action/commit/3ad7283483fc7af8ff2b4ea19663c2d5ca935e26) |
+| v0.24.3 | [`v0.24.3`](https://github.com/chainguard-actions/anchore-sbom-action/tree/v0.24.3) | [`66cbf4b`](https://github.com/anchore/sbom-action/commit/66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c) |
 
 ## Privacy
 
