@@ -1,6 +1,16 @@
 {
   "owner": "anchore",
   "repo": "sbom-action",
-  "version": "",
-  "url": "https://github.com/anchore/sbom-action"
+  "version": "v0.24.4",
+  "commit_sha": "dfcb83b97731532d72be422cbc51ee64adb6fd56",
+  "url": "https://github.com/anchore/sbom-action",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
+  "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
+  "test_agent_version": "2",
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/anchore/sbom-action/v0.24.4/sha256-b4bc2b078a4659703b8f022548feeb4c9c7f1f4761e18a51c652dbf16321d581.tar.gz",
+    "sha256": "b4bc2b078a4659703b8f022548feeb4c9c7f1f4761e18a51c652dbf16321d581",
+    "size_bytes": 670464
+  }
 }
